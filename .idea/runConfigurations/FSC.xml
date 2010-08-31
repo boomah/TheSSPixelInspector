@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="FSC" type="ScalaCompilationServerRunConfiguration" factoryName="Scala Compilation Server">
+    <module name="TheSSPixelInspector" />
+    <setting name="vmparams" value="-verbose" />
+    <RunnerSettings RunnerId="Run" />
+    <ConfigurationWrapper RunnerId="Run" />
+    <method>
+      <option name="Make" enabled="false" />
+    </method>
+  </configuration>
+</component>

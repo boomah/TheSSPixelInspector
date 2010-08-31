@@ -112,31 +112,35 @@ class TheSSPixelInspector extends Frame {
   private def enableInspector {
     timer = new Timer(0, new ActionListener{
       def actionPerformed(e:ActionEvent) = {
-        val location = MouseInfo.getPointerInfo.getLocation
-        // Don't draw if we are inside the frame.
-        if (!bounds.contains(location)) {
-          val w = imagePanel.size.width
-          val h = imagePanel.size.height
-          val captureArea = new Rectangle(location.x-w/2,location.y-h/2,w,h)
-          val image = robot.createScreenCapture(captureArea)
-          // If part of the image is from off screen, paint it black.
-          val g = image.getGraphics
-          g.setColor(Color.BLACK)
-          if (captureArea.x < 0) {
-            g.fillRect(0,0,abs(captureArea.x),h)
+        try {
+          val location = MouseInfo.getPointerInfo.getLocation
+          // Don't draw if we are inside the frame.
+          if (!bounds.contains(location)) {
+            val w = imagePanel.size.width
+            val h = imagePanel.size.height
+            val captureArea = new Rectangle(location.x-w/2,location.y-h/2,w,h)
+            val image = robot.createScreenCapture(captureArea)
+            // If part of the image is from off screen, paint it black.
+            val g = image.getGraphics
+            g.setColor(Color.BLACK)
+            if (captureArea.x < 0) {
+              g.fillRect(0,0,abs(captureArea.x),h)
+            }
+            if (captureArea.x + w > screenSize.width) {
+              val diff = captureArea.x + w - screenSize.width
+              g.fillRect(w-diff,0,diff,h)
+            }
+            if (captureArea.y < 0) {
+              g.fillRect(0,0,w,abs(captureArea.y))
+            }
+            if (captureArea.y + h > screenSize.height) {
+              val diff = captureArea.y + h - screenSize.height
+              g.fillRect(0,h-diff,w,diff)
+            }
+            imagePanel.image = image
           }
-          if (captureArea.x + w > screenSize.width) {
-            val diff = captureArea.x + w - screenSize.width
-            g.fillRect(w-diff,0,diff,h)
-          }
-          if (captureArea.y < 0) {
-            g.fillRect(0,0,w,abs(captureArea.y))
-          }
-          if (captureArea.y + h > screenSize.height) {
-            val diff = captureArea.y + h - screenSize.height
-            g.fillRect(0,h-diff,w,diff)
-          }
-          imagePanel.image = image
+        } catch {
+          case np:NullPointerException =>
         }
       }
     }) {

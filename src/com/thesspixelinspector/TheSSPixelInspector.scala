@@ -171,8 +171,18 @@ class ImagePanel extends Panel {
   def image = _image
   def image_=(image:BufferedImage) {_image = image;repaint}
   private var zoomLevel = 0
-  def increaseZoom {zoomLevel += 1;repaint}
-  def decreaseZoom {zoomLevel -= 1;repaint}
+  def increaseZoom {
+    zoomLevel += 1
+    _xOffSet *= 2
+    _yOffSet *= 2
+    repaint
+  }
+  def decreaseZoom {
+    zoomLevel -= 1
+    _xOffSet /= 2
+    _yOffSet /= 2
+    repaint
+  }
   def canIncreaseZoom = {zoomLevel < (zoomLevels.length - 1)}
   def canDecreaseZoom = {zoomLevel > 0}
   def currentZoomLevel = zoomLevels(zoomLevel)
@@ -190,7 +200,6 @@ class ImagePanel extends Panel {
     val origTransform = g.getTransform
     val transform = new AffineTransform
     val level = zoomLevels(zoomLevel)
-    val currentZoomLevels = zoomLevels.take(zoomLevel + 1)
     val halfWidth = size.width / 2.0
     val offSetFactor = 16 / level
     val xPos = (_xOffSet * offSetFactor + halfWidth / level - halfWidth).round.toInt
@@ -202,6 +211,6 @@ class ImagePanel extends Panel {
     g.setTransform(origTransform)
 
     g.setColor(Color.RED)
-    g.drawRect(halfWidth.toInt - 3, size.height / 2 - 3, 6, 6)
+    g.drawRect(halfWidth.toInt - 8, size.height / 2 - 8, 16, 16)
   }
 }

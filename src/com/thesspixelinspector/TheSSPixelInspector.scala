@@ -195,22 +195,39 @@ class ImagePanel extends Panel {
   def resetOffSets {_xOffSet = 0; _yOffSet = 0;repaint}
 
   override protected def paintComponent(g:Graphics2D) = {
+    // Blank the frame.
     g.setColor(Color.LIGHT_GRAY)
     g.fillRect(0,0,size.width,size.height)
-    val origTransform = g.getTransform
-    val transform = new AffineTransform
+
+    // Draw the image.
     val level = zoomLevels(zoomLevel)
-    val halfWidth = size.width / 2.0
     val offSetFactor = 16 / level
+    val halfWidth = size.width / 2.0
     val xPos = (_xOffSet * offSetFactor + halfWidth / level - halfWidth).round.toInt
     val halfHeight = size.height / 2.0
     val yPos = (_yOffSet * offSetFactor + halfHeight / level - halfHeight).round.toInt
-    transform.scale(level, level)
-    g.setTransform(transform)
-    g.drawImage(image, xPos, yPos, null)
-    g.setTransform(origTransform)
 
+    val transform = new AffineTransform
+    transform.scale(level, level)
+    transform.translate(xPos, yPos)
+    g.drawImage(image, transform, null)
+
+    // Draw the grid if required.
+    if (!canIncreaseZoom) {
+      val l = level.toInt
+      var h,w = l
+      while (h < size.height) {
+        g.drawLine(0, h, size.width, h)
+        h += l
+      }      
+      while (w < size.width) {
+        g.drawLine(w, 0, w, size.height)
+        w += l
+      }
+    }
+
+    // Draw the red box in the centre.
     g.setColor(Color.RED)
-    g.drawRect(halfWidth.toInt - 8, size.height / 2 - 8, 16, 16)
+    g.drawRect(halfWidth.toInt - 8, size.height / 2 - 6, 16, 16)
   }
 }

@@ -2,21 +2,21 @@ package com.thesspixelinspector
 
 import _root_.java.awt.{Dimension, Toolkit, Robot, MouseInfo, Rectangle, Color, Graphics2D}
 import scala.swing.Swing._
-import swing.event.{ButtonClicked, Key, WindowClosing}
 import scala.math._
 import java.awt.image.BufferedImage
 import java.awt.geom.AffineTransform
 import java.awt.event.{InputEvent, KeyEvent, ActionEvent, ActionListener}
 import swing._
-import javax.swing.{Timer, KeyStroke, JComponent}
+import event.{MouseMoved, ButtonClicked, Key, WindowClosing}
 import java.text.DecimalFormat
+import javax.swing.{Timer, KeyStroke, JComponent}
+import java.awt.datatransfer.StringSelection
 
 class TheSSPixelInspector extends Frame {
   private val imagePanel = new ImagePanel {
-    preferredSize = new Dimension()
+    preferredSize = new Dimension(400, 300)
   }
-  imagePanel.preferredSize = new Dimension(400, 300)
-  contents = new MigPanel("") {
+  contents = new MigPanel() {
     title = "The SS Pixel Inspector"
     val checkBox  = new CheckBox {
       text = "Enable"
@@ -69,36 +69,66 @@ class TheSSPixelInspector extends Frame {
 
     val zoomLevelLabel = new Label(zoomLevelText)
 
-    add(imagePanel, "push, grow, wrap")
-    add(checkBox, "split")
-    add(zoomInButton, "gapafter 3lp")
-    add(zoomOutButton)
-    add(zoomLevelLabel)
+    val colourPanel = new MigPanel("insets 1lp") {
+      tooltip = "Copy colour to clipboard (c)"
+      border = LineBorder(Color.GRAY, 1)
+      add(new Label("     "))
+
+      def updateColour {
+        val point = MouseInfo.getPointerInfo.getLocation
+        background = robot.getPixelColor(point.x,point.y)
+      }
+    }
 
     val zoomInAction = Action("zoomIn") {zoomIn}
     val zoomOutAction = Action("zoomOut") {zoomOut}
     zoomInAction.enabled = imagePanel.canIncreaseZoom
     zoomOutAction.enabled = imagePanel.canDecreaseZoom
 
-    peer.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, 0), "zoomIn")
-    peer.getActionMap.put("zoomIn", zoomInAction.peer)
-    peer.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, 0), "zoomOut")
-    peer.getActionMap.put("zoomOut", zoomOutAction.peer)
-    peer.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0), "enableDisable")
-    peer.getActionMap.put("enableDisable", Action("enableDisable") {
-      checkBox.selected = !checkBox.selected
-      enableOrDisable
-    }.peer)
-    peer.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), "viewLeft")
-    peer.getActionMap.put("viewLeft", Action("viewLeft") {if (!checkBox.selected) imagePanel.decreaseXOffSet}.peer)
-    peer.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "viewRight")
-    peer.getActionMap.put("viewRight", Action("viewRight") {if (!checkBox.selected) imagePanel.increaseXOffSet}.peer)
-    peer.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "viewUp")
-    peer.getActionMap.put("viewUp", Action("viewUp") {if (!checkBox.selected) imagePanel.decreaseYOffSet}.peer)
-    peer.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "viewDown")
-    peer.getActionMap.put("viewDown", Action("viewDown") {if (!checkBox.selected) imagePanel.increaseYOffSet}.peer)
-    peer.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "resetOffSets")
-    peer.getActionMap.put("resetOffSets", Action("resetOffSets") {if (!checkBox.selected) imagePanel.resetOffSets}.peer)
+    {
+      val im = peer.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+      val am = peer.getActionMap
+      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, 0), "zoomIn")
+      am.put("zoomIn", zoomInAction.peer)
+      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, 0), "zoomOut")
+      am.put("zoomOut", zoomOutAction.peer)
+      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0), "enableDisable")
+      am.put("enableDisable", Action("enableDisable") {
+        checkBox.selected = !checkBox.selected
+        enableOrDisable
+      }.peer)
+      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), "viewLeft")
+      am.put("viewLeft", Action("viewLeft") {if (!checkBox.selected) imagePanel.decreaseXOffSet}.peer)
+      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "viewRight")
+      am.put("viewRight", Action("viewRight") {if (!checkBox.selected) imagePanel.increaseXOffSet}.peer)
+      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "viewUp")
+      am.put("viewUp", Action("viewUp") {if (!checkBox.selected) imagePanel.decreaseYOffSet}.peer)
+      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "viewDown")
+      am.put("viewDown", Action("viewDown") {if (!checkBox.selected) imagePanel.increaseYOffSet}.peer)
+      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "resetOffSets")
+      am.put("resetOffSets", Action("resetOffSets") {if (!checkBox.selected) imagePanel.resetOffSets}.peer)
+
+      val copyColourAction = Action("copyColour") {
+        val c = colourPanel.background
+        val text = "new Color(%d,%d,%d)" format (c.getRed, c.getGreen, c.getBlue)
+        Toolkit.getDefaultToolkit.getSystemClipboard.setContents(new StringSelection(text), null)
+      }
+
+      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0), "copyColour")
+      am.put("copyColour", copyColourAction.peer)
+    }
+
+    reactions += {
+      case MouseMoved(`imagePanel`,_,_) => {colourPanel.updateColour}
+    }
+    listenTo(imagePanel.mouse.moves)
+
+    add(imagePanel, "push, grow, wrap")
+    add(checkBox, "split")
+    add(zoomInButton, "gapafter 3lp")
+    add(zoomOutButton)
+    add(zoomLevelLabel)
+    add(colourPanel, "gapbefore push")
   }
   reactions += {case WindowClosing(e) => quit}
   peer.getRootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK), "quit")

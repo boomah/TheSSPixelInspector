@@ -11,8 +11,10 @@ import event.{MouseMoved, ButtonClicked, Key, WindowClosing}
 import java.text.DecimalFormat
 import javax.swing.{Timer, KeyStroke, JComponent}
 import java.awt.datatransfer.StringSelection
+import net.miginfocom.layout.PlatformDefaults
 
 class TheSSPixelInspector extends Frame {
+  PlatformDefaults.setPlatform(PlatformDefaults.GNOME)
   private val imagePanel = new ImagePanel {
     preferredSize = new Dimension(400, 300)
   }
@@ -23,22 +25,22 @@ class TheSSPixelInspector extends Frame {
       tooltip = "Enable or disable the screen capture"
       mnemonic = Key.E
       selected = false
-      reactions += {case ButtonClicked(e) => enableOrDisable}
+      reactions += {case ButtonClicked(e) => enableOrDisable()}
     }
 
-    def enableOrDisable {
+    def enableOrDisable() {
       if (checkBox.selected) {
-        imagePanel.resetOffSets
-        enableInspector
+        imagePanel.resetOffSets()
+        enableInspector()
       }
       else {
-        disableInspector
+        disableInspector()
       }
     }
 
-    def zoomIn {imagePanel.increaseZoom;updateState}
-    def zoomOut {imagePanel.decreaseZoom;updateState}
-    def updateState {
+    def zoomIn() {imagePanel.increaseZoom();updateState()}
+    def zoomOut() {imagePanel.decreaseZoom();updateState()}
+    def updateState() {
       zoomInButton.enabled = imagePanel.canIncreaseZoom
       zoomInAction.enabled = imagePanel.canIncreaseZoom
       zoomOutButton.enabled = imagePanel.canDecreaseZoom
@@ -50,7 +52,7 @@ class TheSSPixelInspector extends Frame {
       tooltip = "Click to zoom in (=)"
       enabled = imagePanel.canIncreaseZoom
       reactions += {
-        case ButtonClicked(b) => zoomIn
+        case ButtonClicked(b) => zoomIn()
       }
     }
 
@@ -58,7 +60,7 @@ class TheSSPixelInspector extends Frame {
       tooltip = "Click to zoom out (-)"
       enabled = imagePanel.canDecreaseZoom
       reactions += {
-        case ButtonClicked(b) => zoomOut
+        case ButtonClicked(b) => zoomOut()
       }
     }
 
@@ -74,14 +76,14 @@ class TheSSPixelInspector extends Frame {
       border = LineBorder(Color.GRAY, 1)
       add(new Label("     "))
 
-      def updateColour {
+      def updateColour() {
         val point = MouseInfo.getPointerInfo.getLocation
         background = robot.getPixelColor(point.x,point.y)
       }
     }
 
-    val zoomInAction = Action("zoomIn") {zoomIn}
-    val zoomOutAction = Action("zoomOut") {zoomOut}
+    val zoomInAction = Action("zoomIn") {zoomIn()}
+    val zoomOutAction = Action("zoomOut") {zoomOut()}
     zoomInAction.enabled = imagePanel.canIncreaseZoom
     zoomOutAction.enabled = imagePanel.canDecreaseZoom
 
@@ -95,18 +97,18 @@ class TheSSPixelInspector extends Frame {
       im.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0), "enableDisable")
       am.put("enableDisable", Action("enableDisable") {
         checkBox.selected = !checkBox.selected
-        enableOrDisable
+        enableOrDisable()
       }.peer)
       im.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), "viewLeft")
-      am.put("viewLeft", Action("viewLeft") {if (!checkBox.selected) imagePanel.decreaseXOffSet}.peer)
+      am.put("viewLeft", Action("viewLeft") {if (!checkBox.selected) imagePanel.decreaseXOffSet()}.peer)
       im.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "viewRight")
-      am.put("viewRight", Action("viewRight") {if (!checkBox.selected) imagePanel.increaseXOffSet}.peer)
+      am.put("viewRight", Action("viewRight") {if (!checkBox.selected) imagePanel.increaseXOffSet()}.peer)
       im.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "viewUp")
-      am.put("viewUp", Action("viewUp") {if (!checkBox.selected) imagePanel.decreaseYOffSet}.peer)
+      am.put("viewUp", Action("viewUp") {if (!checkBox.selected) imagePanel.decreaseYOffSet()}.peer)
       im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "viewDown")
-      am.put("viewDown", Action("viewDown") {if (!checkBox.selected) imagePanel.increaseYOffSet}.peer)
+      am.put("viewDown", Action("viewDown") {if (!checkBox.selected) imagePanel.increaseYOffSet()}.peer)
       im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "resetOffSets")
-      am.put("resetOffSets", Action("resetOffSets") {if (!checkBox.selected) imagePanel.resetOffSets}.peer)
+      am.put("resetOffSets", Action("resetOffSets") {if (!checkBox.selected) imagePanel.resetOffSets()}.peer)
 
       val copyColourAction = Action("copyColour") {
         val c = colourPanel.background
@@ -119,7 +121,7 @@ class TheSSPixelInspector extends Frame {
     }
 
     reactions += {
-      case MouseMoved(`imagePanel`,_,_) => {colourPanel.updateColour}
+      case MouseMoved(`imagePanel`,_,_) => {colourPanel.updateColour()}
     }
     listenTo(imagePanel.mouse.moves)
 
@@ -130,18 +132,18 @@ class TheSSPixelInspector extends Frame {
     add(zoomLevelLabel)
     add(colourPanel, "gapbefore push")
   }
-  reactions += {case WindowClosing(e) => quit}
+  reactions += {case WindowClosing(e) => quit()}
   peer.getRootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK), "quit")
-  peer.getRootPane.getActionMap.put("quit", Action("quit") {quit}.peer)
+  peer.getRootPane.getActionMap.put("quit", Action("quit") {quit()}.peer)
 
   private val screenSize = Toolkit.getDefaultToolkit.getScreenSize
 
   private var timer:Timer = null
   private val robot = new Robot
 
-  private def enableInspector {
+  private def enableInspector() {
     timer = new Timer(0, new ActionListener{
-      def actionPerformed(e:ActionEvent) = {
+      def actionPerformed(e:ActionEvent) {
         try {
           val location = MouseInfo.getPointerInfo.getLocation
           // Don't draw if we are inside the frame.
@@ -175,18 +177,18 @@ class TheSSPixelInspector extends Frame {
       }
     }) {
       setDelay(100)
-      start
+      start()
     }
   }
-  private def disableInspector {timer.stop}
+  private def disableInspector() {timer.stop()}
 
-  private def quit {
-    if (timer != null) timer.stop
+  private def quit() {
+    if (timer != null) timer.stop()
     System.exit(0)
   }
 
-  pack
-  centerOnScreen
+  pack()
+  centerOnScreen()
   visible = true
 }
 
@@ -199,32 +201,32 @@ class ImagePanel extends Panel {
   private var _image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
   border = LineBorder(Color.GRAY)
   def image = _image
-  def image_=(image:BufferedImage) {_image = image;repaint}
+  def image_=(image:BufferedImage) {_image = image;repaint()}
   private var zoomLevel = 0
-  def increaseZoom {
+  def increaseZoom() {
     zoomLevel += 1
     _xOffSet *= 2
     _yOffSet *= 2
-    repaint
+    repaint()
   }
-  def decreaseZoom {
+  def decreaseZoom() {
     zoomLevel -= 1
     _xOffSet /= 2
     _yOffSet /= 2
-    repaint
+    repaint()
   }
   def canIncreaseZoom = {zoomLevel < (zoomLevels.length - 1)}
   def canDecreaseZoom = {zoomLevel > 0}
   def currentZoomLevel = zoomLevels(zoomLevel)
   private var _xOffSet = 0
   private var _yOffSet = 0
-  def decreaseXOffSet {_xOffSet += 1;repaint}
-  def increaseXOffSet {_xOffSet -= 1;repaint}
-  def decreaseYOffSet {_yOffSet += 1;repaint}
-  def increaseYOffSet {_yOffSet -= 1;repaint}
-  def resetOffSets {_xOffSet = 0; _yOffSet = 0;repaint}
+  def decreaseXOffSet() {_xOffSet += 1;repaint()}
+  def increaseXOffSet() {_xOffSet -= 1;repaint()}
+  def decreaseYOffSet() {_yOffSet += 1;repaint()}
+  def increaseYOffSet() {_yOffSet -= 1;repaint()}
+  def resetOffSets() {_xOffSet = 0; _yOffSet = 0;repaint()}
 
-  override protected def paintComponent(g:Graphics2D) = {
+  override protected def paintComponent(g:Graphics2D) {
     // Blank the frame.
     g.setColor(Color.LIGHT_GRAY)
     g.fillRect(0,0,size.width,size.height)

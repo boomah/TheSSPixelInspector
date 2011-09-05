@@ -65,9 +65,7 @@ class TheSSPixelInspector extends Frame {
     }
 
     val textFormat = new DecimalFormat("000")
-    def zoomLevelText = {
-      textFormat.format(imagePanel.currentZoomLevel * 100) + "%"
-    }
+    def zoomLevelText = {textFormat.format(imagePanel.currentZoomLevel * 100) + "%"}
 
     val zoomLevelLabel = new Label(zoomLevelText)
 
@@ -90,24 +88,26 @@ class TheSSPixelInspector extends Frame {
     {
       val im = peer.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
       val am = peer.getActionMap
-      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, 0), "zoomIn")
+      def ks(ke:Int) = KeyStroke.getKeyStroke(ke, 0)
+      import KeyEvent._
+      im.put(ks(VK_EQUALS), "zoomIn")
       am.put("zoomIn", zoomInAction.peer)
-      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, 0), "zoomOut")
+      im.put(ks(VK_MINUS), "zoomOut")
       am.put("zoomOut", zoomOutAction.peer)
-      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0), "enableDisable")
+      im.put(ks(VK_E), "enableDisable")
       am.put("enableDisable", Action("enableDisable") {
         checkBox.selected = !checkBox.selected
         enableOrDisable()
       }.peer)
-      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), "viewLeft")
+      im.put(ks(VK_LEFT), "viewLeft")
       am.put("viewLeft", Action("viewLeft") {if (!checkBox.selected) imagePanel.decreaseXOffSet()}.peer)
-      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "viewRight")
+      im.put(ks(VK_RIGHT), "viewRight")
       am.put("viewRight", Action("viewRight") {if (!checkBox.selected) imagePanel.increaseXOffSet()}.peer)
-      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "viewUp")
+      im.put(ks(VK_UP), "viewUp")
       am.put("viewUp", Action("viewUp") {if (!checkBox.selected) imagePanel.decreaseYOffSet()}.peer)
-      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "viewDown")
+      im.put(ks(VK_DOWN), "viewDown")
       am.put("viewDown", Action("viewDown") {if (!checkBox.selected) imagePanel.increaseYOffSet()}.peer)
-      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "resetOffSets")
+      im.put(ks(VK_ESCAPE), "resetOffSets")
       am.put("resetOffSets", Action("resetOffSets") {if (!checkBox.selected) imagePanel.resetOffSets()}.peer)
 
       val copyColourAction = Action("copyColour") {
@@ -116,7 +116,7 @@ class TheSSPixelInspector extends Frame {
         Toolkit.getDefaultToolkit.getSystemClipboard.setContents(new StringSelection(text), null)
       }
 
-      im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0), "copyColour")
+      im.put(ks(VK_C), "copyColour")
       am.put("copyColour", copyColourAction.peer)
     }
 
@@ -203,18 +203,8 @@ class ImagePanel extends Panel {
   def image = _image
   def image_=(image:BufferedImage) {_image = image;repaint()}
   private var zoomLevel = 0
-  def increaseZoom() {
-    zoomLevel += 1
-    _xOffSet *= 2
-    _yOffSet *= 2
-    repaint()
-  }
-  def decreaseZoom() {
-    zoomLevel -= 1
-    _xOffSet /= 2
-    _yOffSet /= 2
-    repaint()
-  }
+  def increaseZoom() {zoomLevel += 1;repaint()}
+  def decreaseZoom() {zoomLevel -= 1;repaint()}
   def canIncreaseZoom = {zoomLevel < (zoomLevels.length - 1)}
   def canDecreaseZoom = {zoomLevel > 0}
   def currentZoomLevel = zoomLevels(zoomLevel)
@@ -233,21 +223,29 @@ class ImagePanel extends Panel {
 
     // Draw the image.
     val level = zoomLevels(zoomLevel)
-    val offSetFactor = 16 / level
+    val halfLevel = level / 2.0
     val halfWidth = size.width / 2.0
-    val xPos = (_xOffSet * offSetFactor + halfWidth / level - halfWidth).round.toInt
     val halfHeight = size.height / 2.0
-    val yPos = (_yOffSet * offSetFactor + halfHeight / level - halfHeight).round.toInt
+
+    val xPos = {
+      val r = _xOffSet * level - size.width * level / 2.0 + halfWidth
+      r - (((halfWidth - halfLevel) - r) % level)
+    }
+    val yPos = {
+      val r = _yOffSet * level - size.height * level / 2.0 + halfHeight
+      r - (((halfHeight - halfLevel) - r) % level)
+    }
 
     val transform = new AffineTransform
-    transform.scale(level, level)
     transform.translate(xPos, yPos)
+    transform.scale(level, level)
     g.drawImage(image, transform, null)
 
     // Draw the grid if required.
-    if (!canIncreaseZoom) {
+    if (level > 4.0) {
       val l = level.toInt
-      var h,w = l
+      var w = (halfWidth - halfLevel).toInt % l
+      var h = (halfHeight - halfLevel).toInt % l
       while (h < size.height) {
         g.drawLine(0, h, size.width, h)
         h += l
@@ -259,7 +257,8 @@ class ImagePanel extends Panel {
     }
 
     // Draw the red box in the centre.
+    val halfBoxWidth = halfLevel.toInt
     g.setColor(Color.RED)
-    g.drawRect(halfWidth.toInt - 8, size.height / 2 - 6, 16, 16)
+    g.drawRect(halfWidth.toInt - halfBoxWidth, halfHeight.toInt - halfBoxWidth, level.toInt, level.toInt)
   }
 }
